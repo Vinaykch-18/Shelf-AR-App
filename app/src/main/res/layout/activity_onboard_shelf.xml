@@ -1,0 +1,526 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#020617">
+
+    <!-- ── AR viewport ─────────────────────────────────────────────────── -->
+
+    <FrameLayout
+        android:id="@+id/arFragment"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <!-- ── Top overlay ─────────────────────────────────────────────────── -->
+
+    <LinearLayout
+        android:id="@+id/layoutTopOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top"
+        android:background="@drawable/bg_audit_top_scrim"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="20dp"
+        android:paddingTop="18dp"
+        android:paddingEnd="20dp"
+        android:paddingBottom="14dp">
+
+        <!-- Title + hint -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tvScanStepTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Use photo"
+                android:textColor="@android:color/white"
+                android:textSize="22sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvCaptureHint"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="Keep the full shelf inside the frame, then capture and save"
+                android:textColor="#E2E8F0"
+                android:textSize="14sp" />
+
+        </LinearLayout>
+
+        <!--
+            Posture badge — shows a live cross that moves as the phone tilts.
+            The reference cross (+) stays fixed in the centre.
+            The active cross moves proportionally to phone tilt.
+            When both crosses overlap exactly, the phone is perfectly upright
+            and level (no forward / backward / side tilt).
+        -->
+        <FrameLayout
+            android:id="@+id/layoutPostureBadge"
+            android:layout_width="72dp"
+            android:layout_height="72dp"
+            android:layout_marginStart="12dp"
+            android:background="@drawable/bg_saved_view_card"
+            android:padding="6dp">
+
+            <!-- Static reference cross — stays fixed in the centre -->
+            <TextView
+                android:id="@+id/tvPostureReferenceCross"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="+"
+                android:textColor="#E2E8F0"
+                android:textSize="26sp"
+                android:textStyle="bold" />
+
+            <!-- Moving cross — shifts with phone tilt (driven in code) -->
+            <TextView
+                android:id="@+id/tvPostureActiveCross"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="+"
+                android:textColor="#38BDF8"
+                android:textSize="22sp"
+                android:textStyle="bold" />
+
+            <!--
+                Status label — shows ALIGN / READY / GREAT.
+                ALIGN = phone not upright or tilted too far forward / backward.
+                READY = within allowed range for capture.
+                GREAT = very straight — ideal.
+            -->
+            <TextView
+                android:id="@+id/tvPostureLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|center_horizontal"
+                android:text="ALIGN"
+                android:textColor="#CBD5E1"
+                android:textSize="10sp"
+                android:textStyle="bold" />
+
+            <!--
+                Phone-level reminder icon (small text arrow pointing straight →).
+                Reminds the user to point straight ahead, not down at the shelf.
+            -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="top|center_horizontal"
+                android:layout_marginTop="2dp"
+                android:text="→"
+                android:textColor="#64748B"
+                android:textSize="9sp" />
+
+        </FrameLayout>
+
+    </LinearLayout>
+
+    <!-- ── Progress step strip ─────────────────────────────────────────── -->
+    <!--
+        Five coloured dots show the user's progress:
+          1. Track   — AR tracking ready
+          2. Posture — phone held upright and straight (no tilt down/up)
+          3. Center  — shelf inside guide box
+          4. Sweep   — advisory bonus (orange = try it, green = done, muted = not started)
+          5. Quality — feature map quality reached
+
+        Only dots 1–3 and 5 are REQUIRED gates.
+        Dot 4 (Sweep) is advisory — it helps quality but never blocks capture.
+    -->
+    <LinearLayout
+        android:id="@+id/layoutProgressSteps"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top"
+        android:layout_marginStart="20dp"
+        android:layout_marginTop="112dp"
+        android:layout_marginEnd="20dp"
+        android:background="#40111827"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="12dp"
+        android:paddingTop="10dp"
+        android:paddingEnd="12dp"
+        android:paddingBottom="10dp"
+        android:elevation="4dp">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <View
+                android:id="@+id/stepTrack"
+                android:layout_width="40dp"
+                android:layout_height="4dp"
+                android:background="#94A3B8" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="Tracking"
+                android:textColor="#E2E8F0"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <View
+                android:id="@+id/stepCenter"
+                android:layout_width="40dp"
+                android:layout_height="4dp"
+                android:background="#94A3B8" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="Shelf frame"
+                android:textColor="#E2E8F0"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <View
+                android:id="@+id/stepQuality"
+                android:layout_width="40dp"
+                android:layout_height="4dp"
+                android:background="#94A3B8" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="Scan quality"
+                android:textColor="#E2E8F0"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <View
+            android:id="@+id/stepPosture"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:visibility="gone" />
+
+        <View
+            android:id="@+id/stepMotionBonus"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:visibility="gone" />
+
+    </LinearLayout>
+
+    <!-- ── Step legend (below the dots) ────────────────────────────────── -->
+    <!--
+        Small labels under each dot so the user understands what each means.
+        Laid out to align approximately with the dots above.
+    -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|center_horizontal"
+        android:layout_marginTop="146dp"
+        android:visibility="gone" />
+
+    <!-- ── Center guide frame ───────────────────────────────────────────── -->
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:paddingStart="24dp"
+        android:paddingEnd="24dp">
+
+        <!-- Label + dot -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <View
+                android:id="@+id/viewAlignmentDot"
+                android:layout_width="10dp"
+                android:layout_height="10dp"
+                android:background="#38BDF8" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="Keep the full shelf, both edges, and key labels inside this frame"
+                android:textColor="#E2E8F0"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- Corner frame + reticle -->
+        <FrameLayout
+            android:layout_width="340dp"
+            android:layout_height="460dp"
+            android:layout_marginTop="12dp">
+
+            <TextView
+                android:id="@+id/tvFrameCornerTopLeft"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="top|start"
+                android:text="⌜"
+                android:textColor="#E2E8F0"
+                android:textSize="44sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvFrameCornerTopRight"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="top|end"
+                android:text="⌝"
+                android:textColor="#E2E8F0"
+                android:textSize="44sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvFrameCornerBottomLeft"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|start"
+                android:text="⌞"
+                android:textColor="#E2E8F0"
+                android:textSize="44sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvFrameCornerBottomRight"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|end"
+                android:text="⌟"
+                android:textColor="#E2E8F0"
+                android:textSize="44sp"
+                android:textStyle="bold" />
+
+            <View
+                android:layout_width="2dp"
+                android:layout_height="match_parent"
+                android:layout_gravity="center_horizontal"
+                android:alpha="0.28"
+                android:background="#66E2E8F0" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="2dp"
+                android:layout_gravity="center_vertical"
+                android:alpha="0.28"
+                android:background="#66E2E8F0" />
+
+            <TextView
+                android:id="@+id/tvReticle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="+"
+                android:textColor="@android:color/white"
+                android:textSize="46sp"
+                android:textStyle="bold" />
+
+        </FrameLayout>
+
+    </LinearLayout>
+
+    <!-- ── Bottom controls ─────────────────────────────────────────────── -->
+
+    <LinearLayout
+        android:id="@+id/layoutCaptureControls"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:background="@drawable/bg_audit_bottom_sheet"
+        android:orientation="vertical"
+        android:paddingStart="20dp"
+        android:paddingTop="16dp"
+        android:paddingEnd="20dp"
+        android:paddingBottom="22dp">
+
+        <!-- Status message -->
+        <TextView
+            android:id="@+id/tvAnchorStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Use one continuous AR session. Capture only when the full shelf fits the guide cleanly."
+            android:textColor="#CBD5E1"
+            android:textSize="14sp" />
+
+        <!-- Capture button -->
+        <Button
+            android:id="@+id/btnCaptureShelf"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/bg_audit_primary_button"
+            android:backgroundTint="@null"
+            android:enabled="false"
+            android:text="Capture photo"
+            android:textAllCaps="false"
+            android:textColor="@android:color/white"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <!-- Result panel (shown after capture) -->
+        <LinearLayout
+            android:id="@+id/layoutResultPanel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:background="@drawable/bg_saved_view_card"
+            android:orientation="vertical"
+            android:padding="14dp"
+            android:visibility="gone">
+
+            <!-- Captured image preview -->
+            <ImageView
+                android:id="@+id/ivCapturedImage"
+                android:layout_width="match_parent"
+                android:layout_height="230dp"
+                android:adjustViewBounds="true"
+                android:background="@drawable/bg_saved_view_card"
+                android:contentDescription="Captured shelf image"
+                android:scaleType="centerCrop" />
+
+            <!-- Capture quality summary -->
+            <TextView
+                android:id="@+id/tvCaptureSummary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:text="This is a focused shelf preview. Retake it or save this shelf and continue."
+                android:textColor="#CBD5E1"
+                android:textSize="13sp" />
+
+            <!-- Shelf name input -->
+            <EditText
+                android:id="@+id/etShelfName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/bg_capture_input"
+                android:hint="Shelf name (entered before capture)"
+                android:imeOptions="actionDone"
+                android:inputType="none"
+                android:minHeight="48dp"
+                android:paddingStart="14dp"
+                android:paddingTop="12dp"
+                android:paddingEnd="14dp"
+                android:paddingBottom="12dp"
+                android:textColor="@android:color/white"
+                android:textColorHint="#94A3B8"
+                android:enabled="false" />
+
+            <!-- Retake / Save row -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:orientation="horizontal">
+
+                <Button
+                    android:id="@+id/btnRetakeShelf"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_secondary_button"
+                    android:backgroundTint="@null"
+                    android:text="Retake photo"
+                    android:textAllCaps="false"
+                    android:textColor="@android:color/white"
+                    android:textStyle="bold" />
+
+                <Space
+                    android:layout_width="12dp"
+                    android:layout_height="1dp" />
+
+                <Button
+                    android:id="@+id/btnSaveShelf"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="2"
+                    android:background="@drawable/bg_audit_primary_button"
+                    android:backgroundTint="@null"
+                    android:enabled="false"
+                    android:text="Use photo"
+                    android:textAllCaps="false"
+                    android:textColor="@android:color/white"
+                    android:textStyle="bold" />
+
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- ── Loading overlay ─────────────────────────────────────────────── -->
+
+    <FrameLayout
+        android:id="@+id/loadingOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#A0000000"
+        android:clickable="true"
+        android:focusable="true"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:background="@drawable/bg_loading_card"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:paddingStart="24dp"
+            android:paddingTop="22dp"
+            android:paddingEnd="24dp"
+            android:paddingBottom="22dp">
+
+            <ProgressBar
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+
+            <TextView
+                android:id="@+id/tvLoadingMessage"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:text="Saving shelf…"
+                android:textColor="@android:color/white"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+    </FrameLayout>
+
+</FrameLayout>
