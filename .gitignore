@@ -9,6 +9,7 @@ local.properties
 *.properties.local
 
 # Android Studio / IntelliJ
+.idea/
 .idea/workspace.xml
 .idea/tasks.xml
 .idea/usage.statistics.xml

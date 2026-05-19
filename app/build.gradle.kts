@@ -21,7 +21,11 @@ android {
         versionCode = 1
         versionName = "1.0"
 
+        manifestPlaceholders["ARCORE_API_KEY"] =
+            project.findProperty("ARCORE_API_KEY") as String? ?: ""
+
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
     }
 
     buildTypes {

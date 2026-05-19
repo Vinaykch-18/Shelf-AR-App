@@ -24,7 +24,7 @@
 
         <meta-data
             android:name="com.google.android.ar.API_KEY"
-            android:value="AIzaSyBYuF4biKy43BURgN-ZBoQFaJOsLyBP62E" />
+            android:value="${ARCORE_API_KEY}" />
 
         <activity android:name=".activities.ShelfListActivity" />
         <activity android:name=".activities.AuditReviewActivity" />
